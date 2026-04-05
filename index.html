@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator Web Application</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f0f0; margin: 0; }
+        .calculator { background-color: #333; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        #display { grid-column: span 4; background-color: #fff; border: none; padding: 15px; font-size: 2em; text-align: right; border-radius: 5px; margin-bottom: 15px; width: calc(100% - 30px); /* Adjust for padding */ box-sizing: border-box; }
+        .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button { padding: 20px; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { opacity: 0.8; }
+        .btn-num { background-color: #666; color: white; }
+        .btn-op { background-color: #ff9f43; color: white; }
+        .btn-eq { background-color: #2ecc71; color: white; grid-column: span 2; }
+        .btn-clear { background-color: #e74c3c; color: white; grid-column: span 2; }
+    </style>
+</head>
+<body>
+
+<div class="calculator">
+    <input type="text" id="display" readonly>
+    <div class="buttons">
+        <button class="btn-clear" id="clear">C</button>
+        <button class="btn-op" data-op="/">/</button>
+        <button class="btn-op" data-op="*">×</button>
+        <button class="btn-num">7</button>
+        <button class="btn-num">8</button>
+        <button class="btn-num">9</button>
+        <button class="btn-op" data-op="-">-</button>
+        <button class="btn-num">4</button>
+        <button class="btn-num">5</button>
+        <button class="btn-num">6</button>
+        <button class="btn-op" data-op="+">+</button>
+        <button class="btn-num">1</button>
+        <button class="btn-num">2</button>
+        <button class="btn-num">3</button>
+        <button class="btn-num">0</button>
+        <button class="btn-num">.</button>
+        <button class="btn-eq" id="equals">=</button>
+    </div>
+</div>
+
+<script>
+    const display = document.getElementById('display');
+    const buttons = document.querySelectorAll('button');
+    let currentInput = '';
+    let previousInput = '';
+    let operator = null;
+
+    // --- DOM Manipulation & Event Handling ---
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const buttonText = button.textContent;
+            
+            if (button.classList.contains('btn-num')) {
+                handleNumber(buttonText);
+            } else if (button.classList.contains('btn-op')) {
+                handleOperator(button.dataset.op);
+            } else if (button.id === 'equals') {
+                handleEquals();
+            } else if (button.id === 'clear') {
+                handleClear();
+            }
+            updateDisplay();
+        });
+    });
+
+    // --- Core Functions for Logic & Arithmetic ---
+
+    function handleNumber(num) {
+        if (num === '.' && currentInput.includes('.')) return; // Prevent multiple decimals
+        if (currentInput === '0' && num !== '.') {
+          currentInput = num; // Replace initial zero
+        } else {
+          currentInput += num;
+        }
+    }
+
+    function handleOperator(op) {
+        if (currentInput === '' && op === '-') { // Handle negative numbers
+             currentInput = '-';
+             updateDisplay();
+             return;
+        }
+        if (currentInput === '' || currentInput === '-') return; // Do nothing if no number
+
+        if (previousInput !== '') {
+            handleEquals(); // Calculate chain operations (e.g., 5 + 3 + ...)
+        }
+        operator = op;
+        previousInput = currentInput;
+        currentInput = '';
+    }
+
+    function handleEquals() {
+        if (previousInput === '' || currentInput === '' || !operator) return;
+
+        let result;
+        const prev = parseFloat(previousInput);
+        const current = parseFloat(currentInput);
+
+        // --- Error Handling ---
+        if (isNaN(prev) || isNaN(current)) {
+            display.value = "Error";
+            handleClear();
+            return;
+        }
+
+        // --- Basic Arithmetic Operations ---
+        switch (operator) {
+            case '+':
+                result = prev + current;
+                break;
+            case '-':
+                result = prev - current;
+                break;
+            case '*':
+                result = prev * current;
+                break;
+            case '/':
+                // --- Error Handling: Division by Zero ---
+                if (current === 0) {
+                    display.value = "Error: Div by 0";
+                    handleClear();
+                    return;
+                }
+                result = prev / current;
+                break;
+            default:
+                return;
+        }
+
+        currentInput = result.toString();
+        operator = null;
+        previousInput = '';
+    }
+
+    function handleClear() {
+        currentInput = '';
+        previousInput = '';
+        operator = null;
+    }
+
+    function updateDisplay() {
+        display.value = currentInput;
+    }
+
+    // --- Keyboard Input Handling ---
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+        if (!isNaN(key)) { // Check if it's a number key
+            handleNumber(key);
+        } else if (key === '.') {
+            handleNumber('.');
+        } else if (['+', '-', '*', '/'].includes(key)) {
+            handleOperator(key);
+        } else if (key === 'Enter' || key === '=') {
+            event.preventDefault(); // Prevent default action (like form submission)
+            handleEquals();
+        } else if (key === 'Escape' || key.toLowerCase() === 'c') {
+            handleClear();
+        } else if (key === 'Backspace') {
+            currentInput = currentInput.slice(0, -1);
+        }
+        updateDisplay();
+    });
+</script>
+
+</body>
+</html>
